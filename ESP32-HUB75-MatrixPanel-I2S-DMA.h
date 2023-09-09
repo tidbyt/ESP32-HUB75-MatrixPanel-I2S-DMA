@@ -596,6 +596,7 @@ class MatrixPanel_I2S_DMA {
         i2s_parallel_stop_dma(ESP32_I2S_DEVICE);
     } 
     
+    const int getLsbMsbTransitionBit() const { return lsbMsbTransitionBit; }
 
 
   // ------- PROTECTED -------
