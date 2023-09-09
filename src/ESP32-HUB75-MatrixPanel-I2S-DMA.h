@@ -306,7 +306,7 @@ struct HUB75_I2S_CFG
   bool clkphase;
 
   // Minimum refresh / scan rate needs to be configured on start due to LSBMSB_TRANSITION_BIT calculation in allocateDMAmemory()
-  uint8_t min_refresh_rate;
+  uint16_t min_refresh_rate;
 
   // struct constructor
   HUB75_I2S_CFG(
@@ -683,6 +683,8 @@ public:
     // i2s_parallel_stop_dma(ESP32_I2S_DEVICE);
     dma_bus.dma_transfer_stop();
   }
+
+  int getLsbMsbTransitionBit() const { return lsbMsbTransitionBit; }
 
   // ------- PROTECTED -------
   // those might be useful for child classes, like VirtualMatrixPanel
