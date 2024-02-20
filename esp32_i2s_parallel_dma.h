@@ -17,12 +17,13 @@ extern "C" {
 #include <sys/types.h>
 
 #include <freertos/FreeRTOS.h>
-#include <driver/i2s.h>
 #include <esp_err.h>
 //#include <esp32/rom/lldesc.h>
 //#include <esp32/rom/gpio.h>
 #include <rom/lldesc.h>
 #include <rom/gpio.h>
+#include <driver/i2s_types.h>
+#include <soc/i2s_periph.h>
 
 
 // Get MCU Type and Max CLK Hz for MCU

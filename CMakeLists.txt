@@ -5,14 +5,9 @@
 cmake_minimum_required(VERSION 3.5)
 idf_build_get_property(target IDF_TARGET)
 
-if(ARDUINO_ARCH_ESP32)
-    list(APPEND arduino_build arduino Adafruit-GFX-Library)
-else()
-    list(APPEND esp_idf_build esp_lcd driver)
-endif()
 idf_component_register(SRCS "esp32_i2s_parallel_dma.c" "ESP32-HUB75-MatrixPanel-I2S-DMA.cpp" "ESP32-HUB75-MatrixPanel-leddrivers.cpp"
                        INCLUDE_DIRS "."
-                       PRIV_REQUIRES ${arduino_build} ${esp_idf_build}
+                       PRIV_REQUIRES esp_lcd driver
                        )
 
 # In case you are running into issues with "missing" header files from 3rd party libraries

@@ -21,8 +21,9 @@
 #include <string.h>
 
 #include <driver/gpio.h>
-#include <driver/periph_ctrl.h>
+#include <esp_private/periph_ctrl.h>
 #include <soc/gpio_sig_map.h>
+#include <soc/i2s_periph.h>
 
 // For I2S state management.
 static i2s_parallel_state_t *i2s_state  = NULL;
@@ -31,9 +32,9 @@ static i2s_parallel_state_t *i2s_state  = NULL;
 // Original ESP32 has two I2S's, but we'll stick with the lowest common denominator.
 
 #ifdef ESP32_ORIG
-static i2s_dev_t* I2S[I2S_NUM_MAX] = {&I2S0, &I2S1};
+static i2s_dev_t* I2S[] = {&I2S0, &I2S1};
 #else
-static i2s_dev_t* I2S[I2S_NUM_MAX] = {&I2S0};	
+static i2s_dev_t* I2S[] = {&I2S0};	
 #endif
 
 callback shiftCompleteCallback;
@@ -76,13 +77,13 @@ static inline int get_bus_width(i2s_parallel_cfg_bits_t width) {
   }
 }
 
-static void iomux_set_signal(int gpio, int signal) {
+static void iomux_set_signal(int gpio, int signal, bool invert) {
   if(gpio < 0) {
     return;
   }
-  PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
+  gpio_pad_select_gpio(gpio);
   gpio_set_direction(gpio, GPIO_MODE_DEF_OUTPUT);
-  gpio_matrix_out(gpio, signal, false, false);
+  gpio_matrix_out(gpio, signal, invert, false);
   
   // More mA the better...
   gpio_set_drive_capability((gpio_num_t)gpio, (gpio_drive_cap_t)3);
@@ -153,9 +154,6 @@ esp_err_t i2s_parallel_driver_install(i2s_port_t port, i2s_parallel_config_t* co
   
   //port = I2S_NUM_0; /// override.
   
-  if(port < I2S_NUM_0 || port >= I2S_NUM_MAX) {
-    return ESP_ERR_INVALID_ARG;
-  }
   if(conf->sample_width < I2S_PARALLEL_WIDTH_8 || conf->sample_width >= I2S_PARALLEL_WIDTH_MAX) {
     return ESP_ERR_INVALID_ARG;
   }
@@ -224,14 +222,10 @@ esp_err_t i2s_parallel_driver_install(i2s_port_t port, i2s_parallel_config_t* co
   
   // Setup GPIO's
   for(int i = 0; i < bus_width; i++) {
-    iomux_set_signal(conf->gpio_bus[i], iomux_signal_base + i);
+    iomux_set_signal(conf->gpio_bus[i], iomux_signal_base + i, false);
   }
-  iomux_set_signal(conf->gpio_clk, iomux_clock);
+  iomux_set_signal(conf->gpio_clk, iomux_clock, conf->clkphase);
   
-  // invert clock phase if required
-  if (conf->clkphase)
-    GPIO.func_out_sel_cfg[conf->gpio_clk].inv_sel = 1;
-
   // Setup i2s clock
   dev->sample_rate_conf.val = 0;
   
@@ -357,10 +351,6 @@ esp_err_t i2s_parallel_driver_install(i2s_port_t port, i2s_parallel_config_t* co
 }
 
  esp_err_t i2s_parallel_stop_dma(i2s_port_t port) {
-  if(port < I2S_NUM_0 || port >= I2S_NUM_MAX) {
-    return ESP_ERR_INVALID_ARG;
-  }
-
   i2s_dev_t* dev =  I2S[port];
   
   // Stop all ongoing DMA operations
@@ -373,10 +363,6 @@ esp_err_t i2s_parallel_driver_install(i2s_port_t port, i2s_parallel_config_t* co
 
 
  esp_err_t i2s_parallel_send_dma(i2s_port_t port, lldesc_t* dma_descriptor) {
-  if(port < I2S_NUM_0 || port >= I2S_NUM_MAX) {
-    return ESP_ERR_INVALID_ARG;
-  }
-
   i2s_dev_t* dev =  I2S[port];
   
 
